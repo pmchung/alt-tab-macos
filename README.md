@@ -1,3 +1,6 @@
+> Fork of original project to adjust vertical position to exact center
+
+
 # AltTab
 
 [![Screenshot](docs/public/demo/frontpage.jpg)](docs/public/demo/frontpage.jpg)
