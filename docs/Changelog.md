@@ -1,5 +1,41 @@
 # Release notes
 
+# [6.30.0](https://github.com/lwouis/alt-tab-macos/compare/v6.29.0...v6.30.0) (2022-02-05)
+
+
+### Features
+
+* add localization in danish, catalan, persian, serbian ([058a0f8](https://github.com/lwouis/alt-tab-macos/commit/058a0f8))
+* allow cursor follow focus behavior ([be50758](https://github.com/lwouis/alt-tab-macos/commit/be50758))
+* update some localizations ([17fbcc5](https://github.com/lwouis/alt-tab-macos/commit/17fbcc5))
+
+# [6.29.0](https://github.com/lwouis/alt-tab-macos/compare/v6.28.0...v6.29.0) (2021-12-01)
+
+
+### Bug Fixes
+
+* only make network calls to appcenter when necessary (closes [#1265](https://github.com/lwouis/alt-tab-macos/issues/1265)) ([79c2906](https://github.com/lwouis/alt-tab-macos/commit/79c2906))
+* prevent setting min width to 0% in preferences (see [#1248](https://github.com/lwouis/alt-tab-macos/issues/1248)) ([467736c](https://github.com/lwouis/alt-tab-macos/commit/467736c))
+
+
+### Features
+
+* add apple screen sharing to default blacklist ([#1258](https://github.com/lwouis/alt-tab-macos/issues/1258)) ([d4780f6](https://github.com/lwouis/alt-tab-macos/commit/d4780f6))
+* add vmware fusion to default blacklist (closes [#1258](https://github.com/lwouis/alt-tab-macos/issues/1258)) ([17f98b5](https://github.com/lwouis/alt-tab-macos/commit/17f98b5))
+
+# [6.28.0](https://github.com/lwouis/alt-tab-macos/compare/v6.27.1...v6.28.0) (2021-11-19)
+
+
+### Bug Fixes
+
+* would sometimes crash when opening preferences > appearance ([c66e106](https://github.com/lwouis/alt-tab-macos/commit/c66e106))
+
+
+### Features
+
+* native support for apple silicon (e.g. m1 mac) ([6f93130](https://github.com/lwouis/alt-tab-macos/commit/6f93130))
+* support login-at-start on macos 11, 12, and m1 macs ([664c5b9](https://github.com/lwouis/alt-tab-macos/commit/664c5b9))
+
 ## [6.27.1](https://github.com/lwouis/alt-tab-macos/compare/v6.27.0...v6.27.1) (2021-11-13)
 
 

@@ -101,6 +101,9 @@
 "Crash reports policy:" = "Crash reports policy:";
 
 /* No comment provided by engineer. */
+"Cursor follows focus" = "Cursor follows focus";
+
+/* No comment provided by engineer. */
 "Do nothing" = "Do nothing";
 
 /* No comment provided by engineer. */
@@ -186,6 +189,9 @@
 
 /* No comment provided by engineer. */
 "Minimized windows:" = "Minimized windows:";
+
+/* No comment provided by engineer. */
+"Miscellaneous:" = "Miscellaneous:";
 
 /* No comment provided by engineer. */
 "Mouse hover" = "Mouse hover";

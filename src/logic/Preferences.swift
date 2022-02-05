@@ -24,6 +24,7 @@ class Preferences {
         "hideShowAppShortcut": "H",
         "arrowKeysEnabled": "true",
         "mouseHoverEnabled": "true",
+        "cursorFollowFocusEnabled": "false",
         "showMinimizedWindows": ShowHowPreference.show.rawValue,
         "showMinimizedWindows2": ShowHowPreference.show.rawValue,
         "showHiddenWindows": ShowHowPreference.show.rawValue,
@@ -49,7 +50,7 @@ class Preferences {
         "startAtLogin": "true",
         "menubarIcon": MenubarIconPreference.outlined.rawValue,
         "dontShowBlacklist": ["com.McAfee.McAfeeSafariHost"].joined(separator: "\n"),
-        "disableShortcutsBlacklist": ["com.realvnc.vncviewer", "com.microsoft.rdc.macos", "com.teamviewer.TeamViewer", "org.virtualbox.app.VirtualBoxVM", "com.parallels.", "com.citrix.XenAppViewer", "com.citrix.receiver.icaviewer.mac", "com.nicesoftware.dcvviewer"].joined(separator: "\n"),
+        "disableShortcutsBlacklist": ["com.realvnc.vncviewer", "com.microsoft.rdc.macos", "com.teamviewer.TeamViewer", "org.virtualbox.app.VirtualBoxVM", "com.parallels.", "com.citrix.XenAppViewer", "com.citrix.receiver.icaviewer.mac", "com.nicesoftware.dcvviewer", "com.vmware.fusion", "com.apple.ScreenSharing"].joined(separator: "\n"),
         "disableShortcutsBlacklistOnlyFullscreen": "true",
         "updatePolicy": UpdatePolicyPreference.autoCheck.rawValue,
         "crashPolicy": CrashPolicyPreference.ask.rawValue,
@@ -90,6 +91,7 @@ class Preferences {
     static var hideShowAppShortcut: String { defaults.string("hideShowAppShortcut") }
     static var arrowKeysEnabled: Bool { defaults.bool("arrowKeysEnabled") }
     static var mouseHoverEnabled: Bool { defaults.bool("mouseHoverEnabled") }
+    static var cursorFollowFocusEnabled: Bool { defaults.bool("cursorFollowFocusEnabled") }
     static var showTabsAsWindows: Bool { defaults.bool("showTabsAsWindows") }
     static var hideColoredCircles: Bool { defaults.bool("hideColoredCircles") }
     static var windowDisplayDelay: DispatchTimeInterval { DispatchTimeInterval.milliseconds(defaults.int("windowDisplayDelay")) }
@@ -159,33 +161,68 @@ class Preferences {
     static var all: [String: Any] { defaults.persistentDomain(forName: NSRunningApplication.current.bundleIdentifier!)! }
 
     static func migratePreferences() {
-        let preferencesVersion = "preferencesVersion"
-        if let currentVersion = defaults.string(forKey: preferencesVersion) {
-            if currentVersion.compare(App.version, options: .numeric) == .orderedAscending {
-                updateToNewPreferences(preferencesVersion)
+        let preferencesKey = "preferencesVersion"
+        if let diskVersion = defaults.string(forKey: preferencesKey) {
+            if diskVersion.compare(App.version, options: .numeric) == .orderedAscending {
+                updateToNewPreferences(diskVersion)
             }
-        } else {
-            // first time migrating
-            updateToNewPreferences(preferencesVersion)
+        }
+        defaults.set(App.version, forKey: preferencesKey)
+    }
+
+    private static func updateToNewPreferences(_ currentVersion: String) {
+        if currentVersion.compare("6.28.1", options: .numeric) != .orderedDescending {
+            migrateMinMaxWindowsWidthInRow()
+            if currentVersion.compare("6.27.1", options: .numeric) != .orderedDescending {
+                // "Start at login" new implem doesn't use Login Items; we remove the entry from previous versions
+                migrateLoginItem()
+                if currentVersion.compare("6.23.0", options: .numeric) != .orderedDescending {
+                    // "Show windows from:" got the "Active Space" option removed
+                    migrateShowWindowsFrom()
+                    if currentVersion.compare("6.18.1", options: .numeric) != .orderedDescending {
+                        // nextWindowShortcut used to be able to have modifiers already present in holdShortcut; we remove these
+                        migrateNextWindowShortcuts()
+                        // dropdowns preferences used to store English text; now they store indexes
+                        migrateDropdownsFromTextToIndexes()
+                        // the "Hide menubar icon" checkbox was replaced with a dropdown of: icon1, icon2, hidden
+                        migrateMenubarIconFromCheckboxToDropdown()
+                        // "Show minimized/hidden/fullscreen windows" checkboxes were replaced with dropdowns
+                        migrateShowWindowsCheckboxToDropdown()
+                        // "Max size on screen" was split into max width and max height
+                        migrateMaxSizeOnScreenToWidthAndHeight()
+                    }
+                }
+            }
         }
     }
 
-    private static func updateToNewPreferences(_ preferencesVersion: String) {
-        if App.version.compare("6.3.0", options: .numeric) == .orderedAscending {
-            // dropdowns preferences used to store English text; now they store indexes
-            migrateDropdownsFromTextToIndexes()
-            // the "Hide menubar icon" checkbox was replaced with a dropdown of: icon1, icon2, hidden
-            migrateMenubarIconFromCheckboxToDropdown()
-            // "Show minimized/hidden/fullscreen windows" checkboxes were replaced with dropdowns
-            migrateShowWindowsCheckboxToDropdown()
-            // "Max size on screen" was split into max width and max height
-            migrateMaxSizeOnScreenToWidthAndHeight()
+    private static func migrateMinMaxWindowsWidthInRow() {
+        ["windowMinWidthInRow", "windowMaxWidthInRow"].forEach {
+            if let old = defaults.string(forKey: $0) {
+                if old == "0" {
+                    defaults.set("1", forKey: $0)
+                }
+            }
         }
-        // nextWindowShortcut used to be able to have modifiers already present in holdShortcut; we remove these
-        migrateNextWindowShortcuts()
-        // "Show windows from:" got the "Active Space" option removed
-        migrateShowWindowsFrom()
-        defaults.set(App.version, forKey: preferencesVersion)
+    }
+
+    @available(OSX, deprecated: 10.11)
+    private static func migrateLoginItem() {
+        do {
+            let loginItems = LSSharedFileListCreate(nil, kLSSharedFileListSessionLoginItems.takeRetainedValue(), nil).takeRetainedValue()
+            let loginItemsSnapshot = LSSharedFileListCopySnapshot(loginItems, nil).takeRetainedValue() as! [LSSharedFileListItem]
+            let itemName = Bundle.main.bundleURL.lastPathComponent as CFString
+            let itemUrl = URL(fileURLWithPath: Bundle.main.bundlePath) as CFURL
+            loginItemsSnapshot.forEach {
+                if (LSSharedFileListItemCopyDisplayName($0)?.takeRetainedValue() == itemName) ||
+                       (LSSharedFileListItemCopyResolvedURL($0, 0, nil)?.takeRetainedValue() == itemUrl) {
+                    LSSharedFileListItemRemove(loginItems, $0)
+                }
+            }
+        } catch {
+            // the LSSharedFile API is deprecated, and has a runtime crash on M1 Monterey
+            // we catch any exception to void the app crashing
+        }
     }
 
     private static func migrateShowWindowsFrom() {
